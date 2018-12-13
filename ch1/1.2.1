@@ -1,0 +1,27 @@
+#lang racket
+
+; 1.2.1
+
+; 第一个版本
+(define my-length1
+  (lambda (ls)
+    (if (null? ls)
+        0
+        (+ 1 (my-length1 (cdr ls))))))
+
+(my-length1 `(a b c))
+
+(my-length1 `((x) ()))
+
+; 一个尾递归的版本
+
+(define (my-length2 ls)
+  (letrec ((loop (lambda (ls0 n)
+                   (if (null? ls0)
+                       n
+                       (loop (cdr ls0) (+ n 1))))))
+    (loop ls 0)))
+
+(my-length2 `(a b c))
+(my-length2 `((x) ()))
+(my-length2 `())
