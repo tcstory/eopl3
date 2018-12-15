@@ -1,0 +1,21 @@
+#lang racket
+
+; 普通递归版本
+(define remove-first
+  (lambda (s los)
+    (letrec ((loop (lambda (los0)
+                     (cond
+                       ((null? los0) `())
+                       ((eqv? (car los0) s) loop (cdr los0))
+                       (else (cons (car los0) (loop (cdr los0))))))))
+    (loop los))))
+
+
+(remove-first `a `(a b c))
+(remove-first `b `(e f g))
+(remove-first `a4 `(c1 a4 c1 a4))
+(remove-first `x `())
+
+; exercise 1.8
+
+; exercise 1.9

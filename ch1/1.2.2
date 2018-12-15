@@ -1,0 +1,21 @@
+#lang racket
+
+(define nth-element
+  (lambda (ls n)
+    (letrec ((loop (lambda (ls0 n0)
+                     (if (null? ls0)
+                         (report-list-too-short ls n)
+                         (if (zero? n0)
+                             (car ls0)
+                             (loop (cdr ls0) (- n0 1)))))))
+      (loop ls n))))
+
+(define report-list-too-short
+  (lambda (ls n)
+    (error `nth-element
+           "~s too short by ~s elements.~%"
+           ls (+ n 1))))
+
+
+(nth-element `(a b c d e) 3)
+(nth-element `(1 2 3) 3)
