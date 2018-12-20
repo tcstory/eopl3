@@ -1,0 +1,23 @@
+#lang racket
+
+(define swapper
+  (lambda (x y ls)
+    (letrec ((go (lambda (ls0)
+                   (map (lambda (i)
+                          (if (list? i)
+                              (go i)
+                               (swap i x y)))
+                              ls0))))
+      (go ls))))
+
+
+(define swap
+  (lambda (i x y)
+    (cond
+      ((eqv? i x) y)
+      ((eqv? i y ) x)
+      (else i))))
+
+(swapper `a `d `(a b c d))
+(swapper `a `d `(a d () c d))
+(swapper `x `y `((x) y (z (x))))

@@ -1,0 +1,28 @@
+#lang racket
+
+; 使用 map
+(define down
+  (lambda (ls)
+    (map (lambda (item)
+           (list item)) ls)))
+
+(down `(1 2 3))
+(down `((a) (fine) (idea)))
+(down `(a (more (complated)) object))
+
+
+; 不使用 map
+
+(define down1
+  (lambda (ls)
+    (letrec ((loop (lambda (ls0)
+                     (if (null? ls0)
+                         `()
+                         (cons
+                          (list (car ls0))
+                          (loop (cdr ls0)))))))
+      (loop ls))))
+
+(down1 `(1 2 3))
+(down1 `((a) (fine) (idea)))
+(down1 `(a (more (complated)) object))

@@ -1,0 +1,26 @@
+#lang racket
+
+; 不使用 map
+(define invert
+  (lambda (ls)
+    (letrec ((loop (lambda (ls0)
+                     (if (null? ls0)
+                         `()
+                         (cons
+                          (invert-pair (car ls0))
+                          (loop (cdr ls0)))))))
+      (loop ls))))
+
+(define invert-pair
+  (lambda (ls)
+    (list  (cadr ls) (car ls))))
+
+(invert `((a 1) (a 2) (1 b) (2 b)))
+
+; map 的版本就很简洁
+(define invert1
+  (lambda (ls)
+    (map (lambda (pair)
+           (list (cadr pair) (car pair))) ls)))
+
+(invert1 `((a 1) (a 2) (1 b) (2 b)))

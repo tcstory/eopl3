@@ -1,0 +1,54 @@
+#lang racket
+
+; 第一次见到两个函数, 相互递归调用, 书里把他们叫做 mutually recursive
+; 我来想想怎么把他们搞到一个函数里面
+
+(define subst
+  (lambda (new old slist)
+    (if (null? slist)
+        `()
+        (cons
+         (subst-in-s-exp new old (car slist))
+         (subst new old (cdr slist))))))
+
+(define subst-in-s-exp
+  (lambda (new old sexp)
+    (if (symbol? sexp)
+        (if (eqv? sexp old) new sexp)
+        (subst new old sexp))))
+
+
+(subst `a `b `((b c) (b () d)))
+
+; 合成一个函数, 但是 subst1 和 loop 还是会相互调用
+
+(define subst1
+  (lambda (new old slist)
+    (letrec ((loop (lambda (sexp)
+                     (if (symbol? sexp)
+                         (if (eqv? sexp old) new sexp)
+                         (subst new old sexp)))))
+      (if (null? slist)
+          `()
+          (cons
+           (loop (car slist))
+           (subst new old (cdr slist)))))))
+
+(subst1 `a `b `((b c) (b () d)))
+
+
+; 这一个不会相互调用的版本
+
+(define subst2
+  (lambda (new old slist)
+    (letrec ((loop (lambda (sexp)
+                     (if (symbol? sexp)
+                         (if (eqv? sexp old) new sexp)
+                         (subst new old sexp)))))
+      (if (null? slist)
+          `()
+          (cons
+           (loop (car slist))
+           (loop (cdr slist)))))))
+
+(subst2 `a `b `((b c) (b () d)))

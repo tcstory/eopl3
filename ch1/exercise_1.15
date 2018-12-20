@@ -1,0 +1,17 @@
+#lang racket
+
+; exercise 1.15
+
+(define duple
+  (lambda (n x)
+    (letrec ((loop
+              (lambda (n0)
+                (if (zero? n0)
+                    `()
+                    (cons x (loop (- n0 1)))))))
+      (loop n)))) 
+
+
+(duple 2 3)
+(duple 4 `(ha ha))
+(duple 0 `(blah))

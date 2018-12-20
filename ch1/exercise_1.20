@@ -1,0 +1,39 @@
+#lang racket
+
+; 一开始的版本, 感觉写得挺复杂的
+(define count-occurrences
+  (lambda (s ls)
+    (letrec ((loop (lambda (ls0 n)
+                     (cond
+                       ((null? ls0) n)
+                       ((list? (car ls0))
+                        (+
+                         (loop (cdr ls0) n)
+                         (count-occurrences s (car ls0))))
+                       ((equal? (car ls0) s) (loop (cdr ls0) (+ 1 n)))
+                       (else (loop (cdr ls0) n))))))
+      (loop ls 0))))
+
+(count-occurrences `x `(x y z x))
+(count-occurrences `x `((f x) y (((x z) x))))
+(count-occurrences `w `((f x) y (((x z) x))))
+(newline)
+
+; 把 loop 的逻辑抽出来写吧, 分开写后, 感觉逻辑更清晰了, 以后也这样写把.
+
+(define (count-occurrences1 s slist)
+  (if (null? slist)
+      0
+      (+
+       (count-occurrences1 s (cdr slist))
+       (count-occurrences1-in-s-sexp s (car slist)))))
+
+(define (count-occurrences1-in-s-sexp s sexp)
+  (if (symbol? sexp)
+      (if (equal? sexp s) 1 0)
+      (count-occurrences1 s sexp)))
+
+(count-occurrences1 `x `(x y z x))
+(count-occurrences1 `x `((f x) y (((x z) x))))
+(count-occurrences1 `w `((f x) y (((x z) x))))
+  
