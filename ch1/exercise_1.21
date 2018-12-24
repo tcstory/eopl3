@@ -1,0 +1,47 @@
+#lang racket
+
+; 这是我实现的思路
+
+(define product
+  (lambda (sos1 sos2)
+    (letrec ((loop (lambda (ls)
+                     (if (null? ls)
+                         `()
+                         (append
+                          (flat-map (car ls) sos2)
+                          (loop (cdr ls)))))))
+      (loop sos1))))
+
+(define flat-map
+  (lambda (x ls)
+    (map (lambda (item)
+           (list x item))
+         ls)))
+
+
+(product `(a b c) `(x y))
+(product `(a b) `(x))
+(product `(a) `(x y z))
+
+; 这个方案是我看了一点答案后, 根据猜测写出来的
+; 感觉这个就很 "函数式", 不像我上面的那个方案用很明显的循环来解决
+; 这个解决方案用了传参的方式, 来让函数的执行流程一直往前走, 并能在合适的地方终止掉.
+; 我还是不太习惯这种解决思路, 我更习惯的是带有副作用的解决思路
+
+(define product1
+  (lambda (sos1 sos2)
+    (flat-map1 (lambda (x)
+                (map (lambda (y)
+                       (list x y))
+                     sos2)) sos1)))
+
+(define flat-map1
+  (lambda (proc ls)
+    (if (null? ls)
+        `()
+        (append (proc (car ls)) (flat-map1 proc (cdr ls))))))
+
+(newline)
+(product1 `(a b c) `(x y))
+(product1 `(a b) `(x))
+(product1 `(a) `(x y z))

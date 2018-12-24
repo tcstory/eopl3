@@ -1,0 +1,11 @@
+#lang racket
+
+(define up
+  (lambda (lst)
+    (cond
+      ((null? lst) `())
+      ((pair? (car lst)) (append (up (car lst)) (up (cdr lst))))
+      (else (cons (car lst) (up (cdr lst)))))))
+
+(up `((1 2) (3 4)))
+(up `((x (y)) z))
