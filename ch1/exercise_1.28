@@ -1,0 +1,48 @@
+#lang racket
+
+
+(define (insert ls x)
+  (cond
+    ((null? ls) (list x))
+    ((< (car ls) x) (cons (car ls) (insert (cdr ls) x)))
+    (else (cons x ls))))
+
+
+;(insert `(1 2 3) 4)
+;(insert `(1 3 4 5) 2)
+;(insert `(1 2 3) 0)
+
+; 虽然题目强调了 loi1 和 loi2 都是有序的,
+; 但是我这个方法, loi2的有序对我来说并没有什么用
+
+(define (merge loi1 loi2)
+  (if (null? loi2)
+      loi1
+      (merge
+       (insert loi1 (car loi2))
+       (cdr loi2))))
+
+(merge `(1 4) `(1 2 8))
+(merge `(35 62 81 90 91) `(3 83 85 90))
+
+; 下面我试着实现一下答案的思路
+; 我想不出来, 直接敲一遍答案吧.
+; 答案的思路确实很不错, 但是也很抽象
+
+(define (merge1 loi1 loi2)
+  (cond
+    ((null? loi1) loi2)
+    ((null? loi2) loi1)
+    ((< (car loi1) (car loi2))
+     (cons
+      (car loi1)
+      (merge1 (cdr loi1) loi2)))
+    (else
+     (cons
+      (car loi2)
+      (merge1 loi1 (cdr loi2))))))
+
+(newline)
+(merge1 `(1 4) `(1 2 8))
+(merge1 `(35 62 81 90 91) `(3 83 85 90))
+     

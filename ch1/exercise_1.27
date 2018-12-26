@@ -1,0 +1,18 @@
+#lang racket
+
+(define flatten
+  (lambda (lst)
+    (cond
+      ((null? lst) `())
+      ((symbol? (car lst)) (cons (car lst) (flatten (cdr lst))))
+      (else (append
+             (flatten (car lst))
+             (flatten (cdr lst)))))))
+
+
+(flatten `(a b c))
+(flatten `(a (b c)))
+(flatten `(a (b) (c)))
+(flatten `((a) () (b ()) () (c)))
+(flatten `((a b) c (((d)) e)))
+(flatten `(a b (() (c))))
