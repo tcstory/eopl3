@@ -1,0 +1,36 @@
+#lang racket
+
+; 下面的代码基本上是抄答案的, 因为光看题目, 我理解不了它要干嘛....
+
+(define (leaf n) n)
+
+(define (interior-node name lson rson)
+  (list name lson rson))
+
+(define (leaf? n)
+  (number? n))
+
+(define lson cadr)
+
+(define rson caddr)
+
+(define (contents-of tree)
+  (if (leaf? tree)
+      tree
+      (car tree)))
+
+; 自己实现的思路, 和答案基本一致
+(define (double-tree tree)
+  (if (leaf? tree)
+      (leaf (* 2 tree))
+      (interior-node
+       (contents-of tree)
+       (double-tree (lson tree))
+       (double-tree (rson tree)))))
+
+(double-tree `(foo 1 2))
+(double-tree 1)
+(double-tree 2)
+(double-tree `(bar 1 (foo 1 2)))
+(double-tree `(baz (bar 1 (foo 1 2))
+                   (biz 4 5)))

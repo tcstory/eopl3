@@ -1,0 +1,45 @@
+#lang racket
+
+(define (merge loi1 loi2)
+  (printf "~s vs ~s~%" loi1 loi2)
+  (cond
+    ((null? loi1) loi2)
+    ((null? loi2) loi1)
+    ((< (car loi1) (car loi2))
+     (cons
+      (car loi1)
+      (merge (cdr loi1) loi2)))
+    (else
+     (cons
+      (car loi2)
+      (merge loi1 (cdr loi2))))))
+
+(define (sort loi)
+  (define (merge-sort lst)
+    (cond
+      ((null? lst) `())
+      ((null? (cdr lst)) lst)
+      (else
+       (merge-sort
+        (cons (merge (car lst) (cadr lst))
+              (merge-sort (cddr lst)))))))
+  (car (merge-sort (map list loi))))
+
+
+;(sort `(8 1 5 2 3 -3 10 9))
+
+; 答案原来用了 bottom-up 的合并方法
+; 下面我自己来写写看
+
+(define (sort1 loi)
+  (printf "===>~s~%" loi)
+  (cond
+    ((null? loi) `())
+    ; 这个逻辑是判断数组的长度是不是 1
+    ((null? (cdr loi)) loi)
+    (else
+     (sort1
+      (cons (merge (car loi) (cadr loi))
+            (sort1 (cddr loi)))))))
+
+(sort1 (map list `(3 -3 10 9)))

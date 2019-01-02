@@ -1,0 +1,38 @@
+#lang racket
+
+(define (leaf n) n)
+
+(define (interior-node name lson rson)
+  (list name lson rson))
+
+(define (leaf? n)
+  (number? n))
+
+(define lson cadr)
+
+(define rson caddr)
+
+(define (contents-of tree)
+  (if (leaf? tree)
+      tree
+      (car tree)))
+
+
+(define (mark-leaves-with-red-depth tree)
+  (letrec ((loop (lambda (tree n)
+                   (let ((cur (contents-of tree)))
+                     (cond
+                       ((leaf? cur) n)
+                       ((eqv? `red cur)
+                        (interior-node
+                         cur
+                         (loop (lson tree) (+ n 1))
+                         (loop (rson tree) (+ n 1))))
+                       (else
+                        (interior-node
+                         cur
+                         (loop (lson tree) n)
+                         (loop (rson tree) n))))))))
+    (loop tree 0)))
+
+(mark-leaves-with-red-depth `(red (bar 26 12) (red 11 (quux 117 14))))

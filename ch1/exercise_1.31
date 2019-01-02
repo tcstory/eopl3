@@ -1,0 +1,20 @@
+#lang racket
+
+; 下面的代码基本上是抄答案的, 因为光看题目, 我理解不了它要干嘛....
+
+(define (leaf n) n)
+
+(define (interior-node name lson rson)
+  (list name lson rson))
+
+(define (leaf? n)
+  (number? n))
+
+(define lson cadr)
+
+(define rson caddr)
+
+(define (contents-of tree)
+  (if (leaf? tree)
+      tree
+      (car tree)))
