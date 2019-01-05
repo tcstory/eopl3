@@ -1,0 +1,40 @@
+#lang racket
+
+; 虽然这道题是 3 星, 不过我觉得并不难, 今天也花了很长时间来弄, 都差点写懵逼了
+; 一开始还觉得需要使用闭包来处理, 不过晚上才发现不需要
+(define number-elements
+  (lambda (lst)
+    (if (null? lst)
+        `()
+        (g
+         (list 0 (car lst))
+         (number-elements (cdr lst))))))
+
+
+(define (g head tail)
+  (letrec ((loop (lambda (ls n)
+                   (if (null? ls)
+                       `()
+                       (cons (list n (cadar ls))
+                             (loop (cdr ls) (+ 1 n)))))))
+    (loop (cons head tail) 0)))
+                 
+
+
+(number-elements `(v0 v1 v2 v3))
+(number-elements `(v0))
+
+
+; 下面记录一下答案的解决思路把
+
+;(define (number-elements lst)
+;  (if (null? lst) '()
+;    (g (list 0 (car lst)) (number-elements (cdr lst)))))
+;
+;(define (g head tail)
+;  (if (null? tail)
+;    (list head)
+;    (let* [(n (car head))
+;           (next (car tail))
+;           (new-next (cons (+ n 1) (cdr next)))]
+;      (cons head (g new-next (cdr tail))))))
