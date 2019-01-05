@@ -1,0 +1,49 @@
+#lang racket
+
+(define (leaf n) n)
+
+(define (interior-node name lson rson)
+  (list name lson rson))
+
+(define (leaf? n)
+  (number? n))
+
+(define lson cadr)
+
+(define rson caddr)
+
+(define (contents-of tree)
+  (if (leaf? tree)
+      tree
+      (car tree)))
+
+
+; 答案的思路其实和我差不多, 不过我做这一题的时候, 一开始是再脑子里构想这个操作过程,
+; 后来发现一边在脑子里维持图像和寻找解决方法会很费力, 所以我就找了 32 题为基础, 在上面
+; 一边修改一边尝试, 最后解决掉了
+(define (number-leaves tree i)
+  (if (leaf? tree)
+      (cons (+ 1 i) i)
+      (let* (
+             (left (number-leaves (lson tree) i))
+             (right (number-leaves (rson tree) (car left))))
+        (cons (car right )
+        (interior-node
+         (car tree)
+         (cdr left)
+         (cdr right))))))
+
+(cdr (number-leaves `(foo 1 2) 0))
+(cdr (number-leaves 1 0))
+(cdr (number-leaves `(bar 1 (foo 1 2)) 0))
+(cdr (number-leaves `(baz (bar 1 (foo 1 2)) (biz 4 5)) 0))
+(cdr (number-leaves
+ (interior-node `foo
+                (interior-node `bar
+                               (leaf 26)
+                               (leaf 12))
+                (interior-node `baz
+                               (leaf 11)
+                               (interior-node `quux
+                                              (leaf 117)
+                                              (leaf 14)))) 0))

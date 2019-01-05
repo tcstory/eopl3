@@ -1,0 +1,36 @@
+#lang racket
+
+; 这个思路会创建比较多的 list, 有点浪费内存
+; 看了答案, 我忘了题目说这棵树是二叉搜索树
+(define (path x tree)
+  (letrec ((loop (lambda (tree0 ret)
+                   (cond
+                     ((null? tree0) `())
+                     ((eqv? (car tree0) x)
+                      ret)
+                     (else (let ((ok (loop (cadr tree0)
+                                     (append ret `(left)))))
+                       (if (null? ok)
+                           (loop
+                            (caddr tree0)
+                            (append ret `(right)))
+                           ok)))))))
+    (loop tree `())))
+
+; 下面这个是看了答案后, 再根据自己的想法修改的
+; 还是答案的思路好, 可能是我的思路忘了这棵树是 bst 树
+(define (path1 x tree)
+  (cond
+    ((null? tree)
+     (error `path "Element ~s not found" x))
+    ((= (car tree) x)
+     `())
+    ((< (car tree) x)
+     (cons `right (path1 x (caddr tree))))
+    (else
+     (cons `left (path1 x (cadr tree))))))
+
+(path1 17 `(14 (7 () (12 () ()))
+              (26 (20 (17 ()())
+                      ())
+                  (31 () ()))))
