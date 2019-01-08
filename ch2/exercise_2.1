@@ -1,0 +1,93 @@
+#lang racket
+
+; zero
+; is-zero?
+; successor
+; predecessor
+
+; 我观察了一下定义, 他应该只能表示非负数
+
+(define base 10)
+
+(define (zero) empty)
+
+(define (is-zero? obj)
+  (null? obj))
+
+; 感觉自己思考的方式需要改进一下, 一开始的时候, 我就直接敲代码了
+; 然后一整晚都没弄好, 感觉有很多东西都没有搞清楚, 今晚(2019-01-06)我首先在
+; 草稿纸上分析了程序, 写出了 loop 的定义, 最后才很快的解决了, 所以这教会我,
+; 以后别急的动手, 先动手分析一下程序
+(define successor
+  (lambda (obj)
+    (letrec ((loop (lambda (lst flag)
+                     (if (null? lst)
+                         (if (= flag 0) `() `(1))
+                         (let ((ret (get-next (car lst))))
+                           (if (= 1 (car ret))
+                               (cons (cdr ret) (loop (cdr lst) 1))
+                               (cons (cdr ret) (cdr lst))))))))
+      (loop obj 0))))
+
+(define predecessor
+  (lambda (obj)
+    (letrec ((loop (lambda (lst flag)
+                     (if (null? lst)
+                         (if (= 1 flag)
+                             (error `predecessor "只能处理非负数.")
+                             `())
+                         (let ((ret (get-prev (car lst))))
+                           (if (= 1 (car ret))
+                               (cons (cdr ret) (loop (cdr lst) 1))
+                               (cons (cdr ret) (cdr lst))))))))
+      (loop obj 0))))
+
+(define (get-next n)
+  (let ((next (+ 1 n)))
+    (if (= next base)
+        (cons 1 0)
+        (cons 0 next))))
+
+(define (get-prev n)
+  (let ((prev (- n 1)))
+    (if (= -1 prev)
+        (cons 1 9)
+        (cons 0 prev))))
+
+
+; 2019.01.08 21:40
+; 看了一下答案, 发现他的思路更好, 代码更抽象和简介, 我试着重新实现一次
+
+(define (predecessor1 obj)
+  (cond
+    ((= (car obj) 0) (cons (- base 1) (predecessor1 (cdr obj))))
+    ((= (car obj) 1)
+     (if (is-zero? (cdr obj))
+         empty
+         (cons 0 (cdr obj))))
+    (else
+     (cons (- (car obj) 1) (cdr obj)))))
+
+(define (successor1 obj)
+  ;(printf "~s~%" obj)
+  (cond
+    ((is-zero? obj) `(1))
+    ((= (- base 1) (car obj))
+     (cons 0 (successor1 (cdr obj))))
+    (else (cons (+ (car obj) 1) (cdr obj)))))
+      
+      
+(successor1 `())
+(successor1 `(0))
+(successor1 `(1 0 1))
+(successor1 `(9 9 8))
+(successor1 `(9 9 9))
+(successor1 `())
+(successor1 `(1 2))
+(successor1 `(2 0 1))
+(predecessor1 `(9 9 9))
+(predecessor1 `(0 1))
+(predecessor1 `(1 0 1))                                 
+(predecessor1 (predecessor1 `(1 0 1)))
+;(predecessor1 `(0))
+;(predecessor1 `())
