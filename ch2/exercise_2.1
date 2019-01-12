@@ -12,7 +12,7 @@
 (define (zero) empty)
 
 (define (is-zero? obj)
-  (null? obj))
+  (or (null? obj) (equal? obj `(0))))
 
 ; 感觉自己思考的方式需要改进一下, 一开始的时候, 我就直接敲代码了
 ; 然后一整晚都没弄好, 感觉有很多东西都没有搞清楚, 今晚(2019-01-06)我首先在
@@ -63,7 +63,7 @@
     ((= (car obj) 0) (cons (- base 1) (predecessor1 (cdr obj))))
     ((= (car obj) 1)
      (if (is-zero? (cdr obj))
-         empty
+         (zero)
          (cons 0 (cdr obj))))
     (else
      (cons (- (car obj) 1) (cdr obj)))))
@@ -77,17 +77,54 @@
     (else (cons (+ (car obj) 1) (cdr obj)))))
       
       
-(successor1 `())
-(successor1 `(0))
-(successor1 `(1 0 1))
-(successor1 `(9 9 8))
-(successor1 `(9 9 9))
-(successor1 `())
-(successor1 `(1 2))
-(successor1 `(2 0 1))
-(predecessor1 `(9 9 9))
-(predecessor1 `(0 1))
-(predecessor1 `(1 0 1))                                 
-(predecessor1 (predecessor1 `(1 0 1)))
+;(successor1 `())
+;(successor1 `(0))
+;(successor1 `(1 0 1))
+;(successor1 `(9 9 8))
+;(successor1 `(9 9 9))
+;(successor1 `())
+;(successor1 `(1 2))
+;(successor1 `(2 0 1))
+;(predecessor1 `(9 9 9))
+;(predecessor1 `(0 1))
+;(predecessor1 `(1 0 1))                                 
+;(predecessor1 (predecessor1 `(1 0 1)))
 ;(predecessor1 `(0))
 ;(predecessor1 `())
+
+
+(define (integer->bigits n)
+  (if (= n 0)
+      (zero)
+      (successor1 (integer->bigits (- n 1)))))
+
+(define (bigits->integer n)
+  (if (is-zero? n)
+      0
+      (+ 1 (bigits->integer (predecessor1 n)))))
+
+; 我和答案的思路还是有点不同的, 为了避免报错, 我修改了 is-zero? 的定义
+(define (plus x y)
+  (if (is-zero? y)
+      x
+      (plus (successor1 x) (predecessor1 y))))
+
+; 这是我的思路
+(define (multiply x y)
+  (letrec ((loop (lambda (x0 y0)
+                   (cond
+                     ((is-zero? y0) `(0))
+                     ((equal? y0 `(1)) x0)
+                     (else (loop (plus x0 x) (predecessor1 y0)))))))
+    (loop x y)))
+
+; 这是参考答案的写法, 不过答案的处理逻辑有点问题哦
+(define (multiply1 x y)
+  (if (is-zero? y)
+      (zero)    
+      (plus x (multiply1 x (predecessor1 y)))))
+
+(define (factorial n)
+  (if (is-zero? n)
+      `(1)
+      (multiply n (factorial (predecessor1 n)))))
