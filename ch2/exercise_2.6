@@ -1,0 +1,72 @@
+#lang eopl
+
+; 第一个思路
+; 看了一下答案, 这个思路好抽象,
+; 这个思路好牛逼
+(define (empty-env)
+  (lambda (search-var)
+    (eopl:error `apply-env "No binding for ~s" search-var)))
+
+(define (extend-env var val env)
+  (lambda (search-var)
+           (if (eqv? var search-var)
+               val
+               (apply-env env search-var))))
+
+(define (apply-env env search-var)
+  (env search-var))
+
+
+(define my-env (empty-env))
+(set! my-env (extend-env `var1 `val1 my-env))
+(set! my-env (extend-env `var2 `val2 my-env))
+
+; 第二个思路
+
+(define (empty-env1) `())
+
+(define (extend-env1 var val env)
+  (cond
+    ((null? env)
+     (list (cons var val)))
+    ((eqv? var (caar env))
+     (cons (cons var val)
+           (cdr env)))
+    (else
+     (cons (car env)
+           (extend-env1 var val (cdr env))))))
+
+(define (apply-env1 env search-var)
+  (cond
+    ((null? env)
+     (report-no-binding-found search-var))
+    ((eqv? search-var (caar env))
+     (cdar env))
+    (else
+     (apply-env1 (cdr env) search-var))))
+
+(define (report-no-binding-found search-var)
+  (eopl:error 'apply-env "No binding for ~s" search-var))
+
+; 第三种思路
+
+(define (empty-env2) (cons `() `()))
+
+(define (extend-env2 var val env)
+  (let ((vars (car env))
+        (vals (cdr env)))
+    (cons (cons var vars)
+          (cons val vals))))
+
+(define (apply-env2 env search-var)
+  (let* ((vars (car env))
+         (vals (cdr env)))
+    (cond
+      ((null? vars)
+       (report-no-binding-found search-var))
+      ((eqv? search-var (car vars))
+       (car vals))
+      (else
+       (apply-env2 (cons (cdr vars)
+                        (cdr vals)))))))
+
