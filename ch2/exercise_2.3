@@ -1,0 +1,42 @@
+#lang eopl
+
+(define-datatype diff-tree diff-tree?
+                 (one)
+                 (diff (lhs diff-tree?)
+                       (rhs diff-tree?)))
+
+(define (zero) (diff (one) (one)))
+
+(define (integer->diff-tree n)
+  (cond [(= 1 n) (one)]
+        [(> n 0) (successor (integer->diff-tree (- n 1)))]
+        [else (predecessor (integer->diff-tree (+ n 1)))]))
+
+(define (diff-tree->integer n)
+  (cases diff-tree n
+         [one () 1]
+         [diff (lhs rhs) (- (diff-tree->integer lhs)
+                            (diff-tree->integer rhs))]))
+
+(define (diff-tree=? n m)
+  (= (diff-tree->integer n) (diff-tree->integer m)))
+
+(define (is-zero? n)
+  (cases diff-tree n
+         (one () #f)
+         (diff (lhs rhs) (diff-tree=? lhs rhs))))
+
+(define (successor n)
+  (diff n (diff (zero) (one))))
+
+(define (predecessor n)
+  (diff n (one)))
+
+; 先写一个用递归解决的版本
+(define (diff-tree-plus1 n m)
+  (if (is-zero? n)
+      m
+      (successor (diff-tree-plus1 (predecessor n) m))))
+
+(define (diff-tree-plus n m)
+  (diff n (diff (zero) m)))
