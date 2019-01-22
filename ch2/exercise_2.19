@@ -1,0 +1,40 @@
+#lang racket
+
+
+(define (number->bintree n)
+  (list n `() `()))
+
+(define (current-element tree)
+  (car tree))
+
+(define (insert-to-left n tree)
+  (let* ((node (number->bintree n))
+         (new-left
+          (list (car node) (cadr tree) (caddr node))))
+    (list (car tree) new-left (caddr tree))))
+
+(define (insert-to-right n tree)
+  (let* ((node (number->bintree n))
+         (new-right
+          (list (car node) (caddr tree) (cadr node))))
+    (list (car tree) (cadr tree) new-right)))
+
+(define (move-to-left tree)
+  (cadr tree))
+
+(define (move-to-right tree)
+  (caddr tree))
+
+(define (at-leaf? tree)
+  (null? tree))
+
+(define t1 (insert-to-right 14
+(insert-to-left 12
+(number->bintree 13))))
+t1
+(move-to-left t1)
+(current-element (move-to-left t1))
+(printf "next round~%")
+t1
+(at-leaf? (move-to-right (move-to-left t1)))
+(insert-to-left 15 t1)
