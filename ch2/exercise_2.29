@@ -1,0 +1,66 @@
+#lang eopl
+
+
+(define flatten
+  (lambda (lst)
+    (cond
+      ((null? lst) `())
+      ((symbol? (car lst)) (cons (car lst) (flatten (cdr lst))))
+      (else (append
+             (flatten (car lst))
+             (flatten (cdr lst)))))))
+
+(define (identifier? sym)
+  (and
+   (symbol? sym)
+   (not (eqv? sym 'lambda))))
+
+(define (list-of pred)
+  (lambda (val)
+    (or
+     (null? val)
+     (and (pair? val)
+          (pred (car val))
+          ((list-of pred) (cdr val))))))
+
+(define-datatype lc-exp lc-exp?
+  (var-exp
+   (var identifier?))
+  (lambda-exp
+   (bound-vars (list-of identifier?))
+   (body lc-exp?))
+  (app-exp
+   (rator lc-exp?)
+   (rands (list-of lc-exp?))))
+
+(define (parse datum)
+  (cond
+    ((symbol? datum) (var-exp datum))
+    ((pair? datum)
+     (if (eqv? `lambda (car datum))
+         (lambda-exp
+          (cadr datum)
+          (parse (caddr datum)))
+         (app-exp
+          (parse (car datum))
+          (map parse (cdr datum)))))
+    (else
+     (eopl:error `parse "数据格式出错"))))
+
+(define (unparse exp)
+  (cases lc-exp exp
+    (var-exp (var) var)
+    (lambda-exp (bound-vars body)
+                (list `lambda
+                      bound-vars
+                      (unparse body)))
+    (app-exp (rator rands)
+             (flatten
+              (list
+               (unparse rator)
+               (map
+                (lambda (rand) (unparse rand))
+                rands))))))
+
+; (unparse (app-exp (var-exp `+) (list (var-exp `x) (var-exp `y))))
+; (lambda-exp `(x y) (app-exp (var-exp `x) (list (var-exp `y))))
