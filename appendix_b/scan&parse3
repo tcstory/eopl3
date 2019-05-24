@@ -1,0 +1,56 @@
+#lang eopl
+
+(define scanner-spec-a
+  '((white-sp (whitespace) skip)
+    (comment ("%" (arbno (not #\newline))) skip)
+    (identifier (letter (arbno (or letter digit))) symbol)
+    (number (digit (arbno digit)) number)))
+
+(define-datatype statement statement?
+  (compound-statement
+   (stmt (list-of statement?)))
+  (while-statement
+   (test expression?)
+   (body statement?))
+  (assign-statement
+   (lhs symbol?)
+   (rhs expression?)))
+
+(define-datatype expression expression?
+  (var-exp
+   (var symbol?))
+  (let-exp
+   (vars (list-of symbol?))
+   (vals (list-of expression?))
+   (exp expression?))
+  (diff-exp
+   (exp1 expression?)
+   (exp2 expression?)))
+
+(define grammar-a3
+  '(
+;    不知道为什么要注释掉 statement 相关的部分才不会报错
+;    (statement
+;     ("{" (arbno statement ";") "}")
+;     compound-statement)
+;    (statement
+;     ("while" expression "do" statement)
+;     while-statement)
+    (statement
+     (identifier ":=" expression)
+     assign-statement)
+    (expression
+     (identifier)
+     var-exp)
+    (expression
+     ("let" (arbno identifier "=" expression) "in" expression)
+     let-exp)
+    (expression
+     ("(" expression "-" expression ")")
+     diff-exp)))
+
+
+(define scan&parse3
+  (sllgen:make-string-parser scanner-spec-a grammar-a3))
+
+(scan&parse3 "let x = y u = v in z")

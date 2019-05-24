@@ -1,0 +1,50 @@
+#lang eopl
+
+(define-datatype statement statement?
+  (compound-statement
+   (stmt1 statement?)
+   (stmt2 statement?))
+  (while-statement
+   (test expression?)
+   (body statement?))
+  (assign-statement
+   (lhs symbol?)
+   (rhs expression?)))
+
+(define-datatype expression expression?
+  (var-exp
+   (var symbol?))
+  (diff-exp
+   (exp1 expression?)
+   (exp2 expression?)))
+
+(define scanner-spec-a
+  '((white-sp (whitespace) skip)
+    (comment ("%" (arbno (not #\newline))) skip)
+    (identifier1 (letter (arbno (or letter digit))) symbol)
+    (number (digit (arbno digit)) number)))
+
+(define grammar-a1
+  '((statement
+     ("{" statement ";" statement "}")
+     compound-statement)
+    (statement
+     ("while" expression "do" statement)
+     while-statement)
+    (statement
+     (identifier1 ":=" expression)
+     assign-statement)
+    (expression
+     (identifier1)
+     var-exp)
+    (expression
+     ("(" expression "-" expression ")")
+     diff-exp)))
+
+(define just-scan
+   (sllgen:make-string-scanner scanner-spec-a grammar-a1))
+
+(define scan&parse1
+  (sllgen:make-string-parser scanner-spec-a grammar-a1))
+
+(scan&parse1 "{x := foo; while x do x := (x - bar)}")

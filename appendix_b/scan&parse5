@@ -1,0 +1,51 @@
+#lang eopl
+
+(define scanner-spec-a
+  '((white-sp (whitespace) skip)
+    (comment ("%" (arbno (not #\newline))) skip)
+    (identifier (letter (arbno (or letter digit))) symbol)
+    (number (digit (arbno digit)) number)))
+
+(define-datatype statement statement?
+  (compound-statement
+   (stmt1 (list-of (list-of symbol?)))
+   (stmt2 (list-of (list-of expression?))))
+  (while-statement
+   (test expression?)
+   (body statement?))
+  (assign-statement
+   (lhs symbol?)
+   (rhs expression?)))
+
+(define-datatype expression expression?
+  (const-exp
+   (n number?))
+  (var-exp
+   (var symbol?))
+  (let-exp
+   (vars (list-of symbol?))
+   (vals (list-of expression?))
+   (exp expression?))
+  (diff-exp
+   (exp1 expression?)
+   (exp2 expression?)))
+
+(define grammar-a5
+  '((statement
+     ("{"
+      (separated-list
+       (separated-list identifier ",")
+       ":="
+       (separated-list expression ",")
+       ";")
+      "}")
+     compound-statement)
+    (expression (number) const-exp)
+    (expression (identifier) var-exp)))
+
+
+(define scan&parse5
+  (sllgen:make-string-parser scanner-spec-a grammar-a5))
+
+
+(scan&parse5 "{x,y := u,v ; z := 4; t1, t2 := 5, 6}")
