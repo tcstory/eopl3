@@ -339,8 +339,13 @@
 
 
 ; (run "let f = proc (z) z in (f 1)")
-; 一个乘法的实现
-(run "let makemult = proc (maker) proc(m) proc(n)
-  if zero?(n) then 0
-  else +((((maker maker) m) -(n,1)),m)
-in let times4 = proc(x) (((makemult makemult) 4)x) in (times4 3)")  
+; 一个阶乘的实现
+(run "
+let makemult = proc (maker) proc(m) proc(n)
+if zero?(n) then 0
+else +((((maker maker) m) -(n,1)),m)
+in let times = proc (m) proc(x) (((makemult makemult) m)x)
+in let f = proc(fn) proc (n)
+if zero?(n) then 1
+else ((times n) ((fn fn) -(n,1)))
+in ((f f) 5)")  
