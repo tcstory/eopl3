@@ -32,41 +32,32 @@
     (expression ("unpack" (arbno my-identifier) "=" expression "in" expression) unpack-exp)
     (expression ("proc" "(" (separated-list my-identifier ",") ")" expression) proc-exp)
     (expression ("(" expression (arbno expression) ")") call-exp)
-    (expression ("letproc" my-identifier "=" "(" my-identifier ")" expression "in" expression) let-proc-exp)
-    (expression ("letrec" my-identifier "(" (separated-list my-identifier ",") ")" "=" expression "in" expression) let-rec-exp)))
+    (expression ("letproc" my-identifier "=" "(" my-identifier ")" expression "in" expression) let-proc-exp)))
 
 (define scan&parse
   (sllgen:make-string-parser the-lexical-spec the-grammar))
 
 (define identifier? symbol?)
+(define environment? procedure?)
+
+(define (empty-env)
+  (lambda (search-var)
+    (report-no-binding-found search-var)))
+
+(define (extend-env saved-var saved-val saved-env)
+  (lambda (search-var)
+    (if (eqv? search-var saved-var)
+        saved-val
+        (apply-env saved-env search-var))))
+
+(define (apply-env env search-var)
+  (env search-var))
 
 (define (report-no-binding-found search-var)
   (eopl:error `apply-env "No binding for ~s" search-var))
 
-(define-datatype environment environment?
-  (empty-env)
-  (extend-env
-   (saved-var identifier?)
-   (saved-val expval?)
-   (saved-env environment?))
-  (extend-env-rec
-   (p-name identifier?)
-   (p-vars (list-of identifier?))
-   (p-body expression?)
-   (saved-env environment?)))
-
-
-(define (apply-env env search-var)
-  (cases environment env
-    (empty-env () (report-no-binding-found search-var))
-    (extend-env (saved-var saved-val saved-env)
-                (if (eqv? search-var saved-var)
-                    saved-val
-                    (apply-env saved-env search-var)))
-    (extend-env-rec (p-name p-vars p-body saved-env)
-                    (if (eqv? search-var p-name)
-                        (proc-val (procedure p-vars p-body env))
-                        (apply-env saved-env search-var)))))
+(define (report-invalid-env env)
+  (eopl:error `apply-env "Bad environment: ~s" env))
 
 (define (init-env)
   (extend-env
@@ -146,11 +137,6 @@
    (proc-name identifier?)
    (proc-var identifier?)
    (proc-body expression?)
-   (let-body expression?))
-  (let-rec-exp
-   (p-name identifier?)
-   (p-vars (list-of identifier?))
-   (p-body expression?)
    (let-body expression?)))
 
 (define-datatype expval expval?
@@ -168,13 +154,12 @@
 (define-datatype proc proc?
   (procedure
    (vars (list-of identifier?))
-   (body expression?)
-   (saved-env environment?)))
+   (body expression?)))
 
 (define apply-procedure
-  (lambda (proc1 vals)
+  (lambda (proc1 vals env)
     (cases proc proc1
-      (procedure (vars body saved-env)
+      (procedure (vars body)
                  (letrec ((loop (lambda (vars0 vals0 new-env)
                                   (if (null? vars0)
                                       (value-of body new-env)
@@ -184,7 +169,7 @@
                                              (car vars0)
                                              (car vals0)
                                              new-env))))))
-                   (loop vars vals saved-env))))))
+                   (loop vars vals env))))))
 
 (define (cond-val exps1 exps2 env)
   (cond ((null? exps1)
@@ -338,19 +323,22 @@
     (unpack-exp (vars exp body)
                 (unpack-val vars exp body env))
     (proc-exp (vars body)
-              (proc-val (procedure vars body env)))
+              (proc-val (procedure vars body)))
     (call-exp (exp args)
               (apply-procedure
                (expval->proc (value-of exp env))
-               (map (lambda (arg) (value-of arg env)) args)))
+               (map (lambda (arg) (value-of arg env)) args)
+               env))
     (let-proc-exp (proc-name proc-var proc-body let-body)
                   (value-of
                    let-body
                    (extend-env
                     proc-name
                     (proc-val (procedure proc-var proc-body env))
-                    env)))
-    (let-rec-exp (p-name p-vars p-body let-body)
-                 (value-of let-body
-                           (extend-env-rec p-name p-vars p-body env)))))
+                    env)))))
 
+(run "let a = 3
+in let p = proc (z) a
+in let f = proc (x) (p 0)
+in let a = 5
+in (f 2)")                
