@@ -33,7 +33,7 @@
     (expression ("proc" "(" (separated-list my-identifier ",") ")" expression) proc-exp)
     (expression ("(" expression (arbno expression) ")") call-exp)
     (expression ("letproc" my-identifier "=" "(" my-identifier ")" expression "in" expression) let-proc-exp)
-    (expression ("letrec" my-identifier "(" (separated-list my-identifier ",") ")" "=" expression "in" expression) let-rec-exp)))
+    (expression ("letrec" (arbno my-identifier "(" (separated-list my-identifier ",") ")" "=" expression) "in" expression) let-rec-exp)))
 
 (define scan&parse
   (sllgen:make-string-parser the-lexical-spec the-grammar))
@@ -57,6 +57,9 @@
 
 
 (define (apply-env env search-var)
+  (my-apply-env env search-var env))
+
+(define (my-apply-env env search-var orig-env)
   (cases environment env
     (empty-env () (report-no-binding-found search-var))
     (extend-env (saved-var saved-val saved-env)
@@ -65,8 +68,17 @@
                     (apply-env saved-env search-var)))
     (extend-env-rec (p-name p-vars p-body saved-env)
                     (if (eqv? search-var p-name)
-                        (proc-val (procedure p-vars p-body env))
-                        (apply-env saved-env search-var)))))
+                        (proc-val (procedure p-vars p-body orig-env))
+                        (my-apply-env saved-env search-var orig-env)))))
+                                       
+(define (extend-env-rec* p-names p-vars p-bodys saved-env)
+  (if (null? p-names)
+      saved-env
+      (extend-env-rec*
+       (cdr p-names)
+       (cdr p-vars)
+       (cdr p-bodys)
+       (extend-env-rec (car p-names) (car p-vars) (car p-bodys) saved-env))))
 
 (define (init-env)
   (extend-env
@@ -148,9 +160,9 @@
    (proc-body expression?)
    (let-body expression?))
   (let-rec-exp
-   (p-name identifier?)
-   (p-vars (list-of identifier?))
-   (p-body expression?)
+   (p-names (list-of identifier?))
+   (p-varss (list-of (list-of identifier?)))
+   (p-bodys (list-of expression?))
    (let-body expression?)))
 
 (define-datatype expval expval?
@@ -350,7 +362,13 @@
                     proc-name
                     (proc-val (procedure proc-var proc-body env))
                     env)))
-    (let-rec-exp (p-name p-vars p-body let-body)
+    (let-rec-exp (p-names p-varss p-bodys let-body)
                  (value-of let-body
-                           (extend-env-rec p-name p-vars p-body env)))))
+                           (extend-env-rec* p-names p-varss p-bodys env)))))
 
+(run "
+letrec
+even(x) = if zero?(x) then 1 else (odd -(x,1))
+odd(x) = if zero?(x) then 0 else (even -(x,1))
+in (odd 13)
+")
