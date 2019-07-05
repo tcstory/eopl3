@@ -33,7 +33,12 @@
     (expression ("proc" "(" (separated-list my-identifier ",") ")" expression) proc-exp)
     (expression ("(" expression (arbno expression) ")") call-exp)
     (expression ("letproc" my-identifier "=" "(" my-identifier ")" expression "in" expression) let-proc-exp)
-    (expression ("letrec" (arbno my-identifier "(" (separated-list my-identifier ",") ")" "=" expression) "in" expression) let-rec-exp)))
+    (expression ("letrec" (arbno my-identifier "(" (separated-list my-identifier ",") ")" "=" expression) "in" expression) let-rec-exp)
+    (expression ("set" my-identifier "=" expression) assign-exp)
+    (expression ("begin" (separated-list expression ";") "end") begin-exp)
+    (expression ("ref" "(" expression ")") ref-exp)))
+
+(sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
 (define scan&parse
   (sllgen:make-string-parser the-lexical-spec the-grammar))
@@ -47,13 +52,48 @@
   (empty-env)
   (extend-env
    (saved-var identifier?)
-   (saved-val expval?)
+   (saved-val reference?)
    (saved-env environment?))
   (extend-env-rec
    (p-name identifier?)
    (p-vars (list-of identifier?))
    (p-body expression?)
    (saved-env environment?)))
+
+(define (empty-store) '())
+
+(define the-store 'unitialized)
+
+(define (get-store) the-store)
+
+(define initialize-store!
+  (lambda ()
+    (set! the-store (empty-store))))
+
+(define reference?
+  (lambda (v)
+    (integer? v)))
+
+(define (newref val)
+  (let ((next-ref (length the-store)))
+    (set! the-store (append the-store (list val)))
+    next-ref))
+
+(define (deref ref)
+  (list-ref the-store ref))
+
+(define (setref! ref val)
+  (set! the-store
+        (letrec ((loop (lambda (the-store1 ref1)
+                         (cond
+                           ((null? the-store1) (eopl:error 'report-invalid-reference))
+                           ((eqv? 0 ref1)
+                            (cons val (cdr the-store1)))
+                           (else
+                            (cons
+                             (car the-store1)
+                             (loop (cdr the-store1) (- ref1 1))))))))
+          (loop the-store ref))))
 
 
 (define (apply-env env search-var)
@@ -68,7 +108,7 @@
                     (apply-env saved-env search-var)))
     (extend-env-rec (p-name p-vars p-body saved-env)
                     (if (eqv? search-var p-name)
-                        (proc-val (procedure p-vars p-body orig-env))
+                        (newref (proc-val (procedure p-vars p-body orig-env)))
                         (my-apply-env saved-env search-var orig-env)))))
                                        
 (define (extend-env-rec* p-names p-vars p-bodys saved-env)
@@ -82,88 +122,11 @@
 
 (define (init-env)
   (extend-env
-   'i (num-val 1)
+   'i (newref (num-val 1))
    (extend-env
-    'v (num-val 5)
+    'v (newref (num-val 5))
     (extend-env
-     'x (num-val 10) (empty-env)))))
-
-(define-datatype program program?
-  (a-program
-   (exp1 expression?)))
-
-(define-datatype expression expression?
-  (const-exp
-   (num number?))
-  (diff-exp
-   (exp1 expression?)
-   (exp2 expression?))
-  (zero?-exp
-   (exp1 expression?))
-  (if-exp
-   (exp1 expression?)
-   (exp2 expression?)
-   (exp3 expression?))
-  (var-exp
-   (var identifier?))
-  (let-exp
-   (vars (list-of identifier?))
-   (exps (list-of expression?))
-   (body expression?))
-  (minus-exp
-   (exp expression?))
-  (add-exp
-   (exp1 expression?)
-   (exp2 expression?))
-  (mul-exp
-   (exp1 expression?)
-   (exp2 expression?))
-  (div-exp
-   (exp1 expression?)
-   (exp2 expression?))
-  (equal?-exp
-   (exp1 expression?)
-   (exp2 expression?))
-  (greater?-exp
-   (exp1 expression?)
-   (exp2 expression?))
-  (less?-exp
-   (exp1 expression?)
-   (exp2 expression?))
-  (cons-exp
-   (exp1 expression?)
-   (exp2 expression?))
-  (emptylist-exp)
-  (car-exp (exp1 expression?))
-  (cdr-exp (exp1 expression?))
-  (null?-exp (exp1 expression?))
-  (list-exp (exps (list-of expression?)))
-  (cond-exp (exps1 (list-of expression?))
-            (exps2 (list-of expression?)))
-  (let*-exp
-   (vars (list-of identifier?))
-   (exps (list-of expression?))
-   (body expression?))
-  (unpack-exp
-   (vars (list-of identifier?))
-   (exp expression?)
-   (body expression?))
-  (proc-exp
-   (vars (list-of identifier?))
-   (body expression?))
-  (call-exp
-   (exp expression?)
-   (args (list-of expression?)))
-  (let-proc-exp
-   (proc-name identifier?)
-   (proc-var identifier?)
-   (proc-body expression?)
-   (let-body expression?))
-  (let-rec-exp
-   (p-names (list-of identifier?))
-   (p-varss (list-of (list-of identifier?)))
-   (p-bodys (list-of expression?))
-   (let-body expression?)))
+     'x (newref (num-val 10)) (empty-env)))))
 
 (define-datatype expval expval?
   (num-val
@@ -175,7 +138,9 @@
    (cdr expval?))
   (emptylist-val)
   (proc-val
-   (proc proc?)))
+   (proc proc?))
+  (ref-val
+   (ref reference?)))
 
 (define-datatype proc proc?
   (procedure
@@ -194,7 +159,7 @@
                                             (cdr vals0)
                                             (extend-env
                                              (car vars0)
-                                             (car vals0)
+                                             (get-ref (car vals0))
                                              new-env))))))
                    (loop vars vals saved-env))))))
 
@@ -214,7 +179,7 @@
                  (cdr exps)
                  body
                  old-env
-                 (extend-env var0 val0 new-env))))))
+                 (extend-env var0 (newref val0) new-env))))))
 
 (define (let*-val vars exps body env)
   (cond ((null? vars) (value-of body env))
@@ -224,7 +189,7 @@
                  (cdr vars)
                  (cdr exps)
                  body
-                 (extend-env var0 val0 env))))))
+                 (extend-env var0 (newref val0) env))))))
 
 (define (unpack-val vars exp body env)
   (let ((lst (value-of exp env)))
@@ -241,6 +206,16 @@
       (emptylist-val)
       (pair-val (value-of (car exps) env)
                 (list-val (cdr exps) env))))
+
+(define (begin-val exps env)
+  (cond
+    ((null? exps) (eopl:error 'begin-val "begin-val"))
+    ((= 1 (length exps))
+     (value-of (car exps) env))
+    (else
+     (begin
+       (value-of (car exps) env)
+       (begin-val (cdr exps) env)))))
 
 (define (expval->num val)
   (cases expval val
@@ -277,17 +252,28 @@
     (eopl:error 'expval-extractors "Looking for a ~s, found ~s"
                 variant value)))
 
+(define (value-of-operand exp env)
+  (cases expression exp
+    (var-exp (var) (ref-val (apply-env env var)))
+    (else (newref (value-of exp env)))))
+
+(define (get-ref val)
+    (cases expval val
+      (ref-val (ref) ref)
+      (else (newref val))))
+
 (define (run string)
   (value-of-program (scan&parse string)))
 
 (define (value-of-program pgm)
+  (initialize-store!)
   (cases program pgm
     (a-program (exp1) (value-of exp1 (init-env)))))
 
 (define (value-of exp env)
   (cases expression exp
     (const-exp (num) (num-val num))
-    (var-exp (var) (apply-env env var))
+    (var-exp (var) (deref (apply-env env var)))
     (diff-exp (exp1 exp2)
               (let ((num1 (expval->num (value-of exp1 env)))
                     (num2 (expval->num (value-of exp2 env))))
@@ -364,11 +350,29 @@
                     env)))
     (let-rec-exp (p-names p-varss p-bodys let-body)
                  (value-of let-body
-                           (extend-env-rec* p-names p-varss p-bodys env)))))
+                           (extend-env-rec* p-names p-varss p-bodys env)))
+    (assign-exp (var exp1)
+                (begin
+                  (setref!
+                   (apply-env env var)
+                   (value-of exp1 env))
+                  (num-val 1)))
+    (begin-exp (exps)
+               (begin-val exps env))
+    (ref-exp (exp1)
+             (value-of-operand exp1 env))))
 
-(run "
-letrec
-even(x) = if zero?(x) then 1 else (odd -(x,1))
-odd(x) = if zero?(x) then 0 else (even -(x,1))
-in (odd 13)
-")
+
+;; 好吧, 我这个答案严格来说还不是 35 题的答案, 不过思路都是差不多, 所以我也懒得改了
+;; 我的想法更像于 c 语言那种, ref 就类似于指针操作一样
+
+;(run "
+;let a = 33
+;      in let b = 44
+;       in let swap = proc (x) proc (y) let temp = x
+;         in begin
+;          set x = y;
+;          set y = temp
+;         end
+;      in begin ((swap ref(a)) ref(b)); -(a,b) end
+;")
