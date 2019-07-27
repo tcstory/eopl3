@@ -259,7 +259,7 @@
                                                     saved-env
                                                     saved-cont)))))
     (try-cont (var handler-exp env cont)
-              (apply-cont val cont))
+              (apply-cont cont val))
     (raise1-cont (saved-cont)
                  (apply-handler val saved-cont))))
 
