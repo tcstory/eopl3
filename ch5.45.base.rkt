@@ -530,14 +530,13 @@
 ;(run "
 ;let buffer = 0
 ;in let producer = proc (n)
-;letrec
-;wait(k) = if zero?(k)
+;letrec waiting(k) = if zero?(k)
 ;then set buffer = n
 ;else begin
 ;print(-(k,-200));
-;(wait -(k,1))
+;(waiting -(k,1))
 ;end
-;in (wait 5)
+;in (waiting 5)
 ;in let consumer = proc (d)
 ;letrec busywait (k) = if zero?(buffer)
 ;then begin
